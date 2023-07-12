@@ -86,7 +86,7 @@ module.exports.createUser = (req, res) => {
         name
       })
     )
-    .then((user) => User.findOne({ _id: user._id }))
+    // .then((user) => User.findOne({ _id: user._id }))
     .then((user) => {
       res.status(HTTP_STATUS_CREATED).send(user);
     })
