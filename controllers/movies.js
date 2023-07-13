@@ -1,20 +1,16 @@
 const Movie = require("../models/movies")
-const {
-  HTTP_STATUS_NOT_FOUND,
-  HTTP_STATUS_INTERNAL_SERVER_ERROR,
-  HTTP_STATUS_BAD_REQUEST,
-} = require("http2").constants;
+const { HTTP_STATUS_CREATED } = require("http2").constants;
+const NotFound = require("../errors/NotFound"); // 404
+const CurrentError = require("../errors/CurrentError"); // 403
+const BadRequest = require("../errors/BadRequest"); // 400
 
-module.exports.getAllMovies = (req, res) => {
+module.exports.getAllMovies = (req, res, next) => {
   Movie.find({})
     .then((movies) => res.send(movies))
-    .catch(() =>
-      res
-        .status(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-        .send({ message: `На сервере произошла ошибка` }))
+    .catch(next)
 }
 
-module.exports.createMovie = (req, res) => {
+module.exports.createMovie = (req, res, next) => {
   const owner = req.user._id;
   Card.create(country,
   director,
@@ -30,53 +26,34 @@ module.exports.createMovie = (req, res) => {
     .then((movie) => res.status(HTTP_STATUS_CREATED).send(card))
     .catch((err) => {
       if (err.name === "ValidationError") {
-        return res.status(HTTP_STATUS_BAD_REQUEST).send({
-          message: `Переданы некорректные данные с ошибкой`,
-        });
+        throw (
+          new BadRequest("Переданы некорректные данные при создании карточки")
+        );
       } else {
-        return res
-          .status(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-          .send({ message: `На сервере произошла ошибка` });
+        return next(err);
       }
     });
 };
 
-module.exports.deleteMovie = (req, res) => {
-  const owner = req.user._id;
+module.exports.deleteMovie = (req, res, next) => {
   Movie.findByIdAndRemove(req.params.movieId)
     .then((movie) => {
-      if (!movie.owner.equals(req.user._id)) {
-        return res
-          .status(HTTP_STATUS_FORBIDDEN)
-          .send({ message: `Вы не можете удалить чужую карточку` });
-      }
       if (!movie) {
-        res
-          .status(HTTP_STATUS_NOT_FOUND)
-          .send({ message: "Карточка не существует" });
+        throw new NotFound('Фильма с таким id не существует');
       }
-      res.send({ message: "Карточка удалена" });
+      if (req.user._id !== movie.owner.toHexString()) {
+        throw new CurrentError('Вы не можете удалить чужой фильм');
+      } else {
+        return Movie.findByIdAndRemove(movie)
+          .then(() => {
+            res.send({ message: `Фильм удалён` });
+          });
+      }
     })
     .catch((err) => {
       if (err.name === "CastError") {
-        return res.status(HTTP_STATUS_BAD_REQUEST).send({
-          message: `Переданы некорректные данные с ошибкой ${err.name}`,
-        });
+        next(new BadRequest("Переданы некорректные данные удаления"));
       }
-      if (err.name === "TypeError") {
-        return res
-          .status(HTTP_STATUS_NOT_FOUND)
-          .send({ message: "Фильм не существует" });
-      }
-      if (err.message === "NotFound") {
-        res
-          .status(HTTP_STATUS_NOT_FOUND)
-          .send({ message: "Фильм не существует" });
-        return;
-      } else {
-        return res
-          .status(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-          .send({ message: `На сервере произошла ошибка` });
-      }
+      return next(err);
     });
 };
