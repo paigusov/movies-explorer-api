@@ -77,6 +77,7 @@ module.exports.login = (req, res, next) => {
 
 module.exports.createUser = (req, res) => {
   const { name, email, password } = req.body;
+  console.log('create')
   bcrypt
     .hash(password, 10)
     .then((hash) =>
