@@ -26,9 +26,9 @@ module.exports.getUserInfo = (req, res, next) => {
 };
 
 module.exports.updateUserInfo = (req, res, next) => {
-  const { name, about } = req.body;
+  const { name } = req.body;
   User.findByIdAndUpdate(
-    req.user._id,
+    req._id,
     { name },
     { new: true, runValidators: true }
   )
@@ -73,9 +73,8 @@ module.exports.createUser = (req, res, next) => {
         email,
         password: hash
       })
-    ).then((user) => console.log(user))
-    // .then((user) => User.findOne({ _id: user._id }))
-     .then(() => res.send({ name, email }))
+    )
+    .then(() => res.send({ name, email }))
     .catch((err) => {
       if (err.name === "MongoServerError" || err.code === 11000) {
         return next(
