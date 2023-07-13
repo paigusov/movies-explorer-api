@@ -2,7 +2,7 @@ const { celebrate, Joi } = require("celebrate");
 const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
 module.exports.validateUpdateUserInfo = celebrate({
   params: Joi.object().keys({
-    userId: Joi.string().length(24).hex().required(),
+    _id: Joi.string().length(24).hex().required(),
   })
 })
 
