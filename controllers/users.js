@@ -73,10 +73,10 @@ module.exports.createUser = (req, res, next) => {
         password: hash
       })
     )
+    .then((user) => User.findOne({ _id: user._id }))
     .then((user) => {
       res.status(HTTP_STATUS_CREATED).send(user);
     })
-    .then((user) => User.findOne({ _id: user._id }))
     .catch((err) => {
       if (err.name === "MongoServerError" || err.code === 11000) {
         return next(
