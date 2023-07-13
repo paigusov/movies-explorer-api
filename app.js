@@ -11,12 +11,11 @@ app.use(express.urlencoded({ extended: true }));
 
 const auth = require("./middlewares/auth");
 app.use(requestLogger);
+const router = require("./routes/index")
 
 mongoose.connect("mongodb://localhost:27017/yafilmsdb", {});
 
-app.use("/", require("./routes/auth"));
-app.use(auth);
-app.use("/", require("./routes/index"));
+app.use("/", router);
 
 app.use((req, res, next) => {
   next(new NotFoundError("Страница не найдена"));

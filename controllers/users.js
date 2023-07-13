@@ -43,20 +43,21 @@ module.exports.updateUserInfo = (req, res, next) => {
 
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
+
   User.findOne({ email })
     .select("+password")
     .then((user) => {
       if (!user) {
         throw new AuthError("Неверный логин или пароль");
-
       }
       return bcrypt.compare(password, user.password).then((matched) => {
         if (!matched) {
           throw new AuthError("Неверный логин или пароль");
         }
-        return res.send({ _id: user._id },
-          NODE_ENV === "production" ? JWT_SECRET : "dev-secret",
-          { expiresIn: "7d" });
+        return res.send(jwt.sign({ _id: user._id },
+        NODE_ENV === "production" ? JWT_SECRET : "dev-secret",
+        { expiresIn: "7d" })
+        )
       });
     })
     .catch(next);
