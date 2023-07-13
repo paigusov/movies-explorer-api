@@ -16,7 +16,7 @@ mongoose.connect("mongodb://localhost:27017/yafilmsdb", {});
 
 app.use("/", require("./routes/auth"))
 // app.use(auth)
-app.use("/", auth, require("./routes/index"));
+app.use("/", require("./routes/index"));
 app.use(errorLogger);
 app.use(errors());
 
