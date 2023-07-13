@@ -48,6 +48,7 @@ module.exports.login = (req, res, next) => {
     .then((user) => {
       if (!user) {
         throw new AuthError("Неверный логин или пароль");
+
       }
       return bcrypt.compare(password, user.password).then((matched) => {
         if (!matched) {
@@ -72,7 +73,7 @@ module.exports.createUser = (req, res, next) => {
         password: hash
       })
     )
-    .then((user) => User.findOne({ _id: user._id }))
+    // .then((user) => User.findOne({ _id: user._id }))
     .then((user) => {
       res.status(HTTP_STATUS_CREATED).send(user);
     })
