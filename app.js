@@ -4,26 +4,26 @@ require("dotenv").config();
 const app = express();
 const { requestLogger, errorLogger } = require('./middlewares/logger');
 const { CORS } = require('./middlewares/corserr');
-app.use(CORS);
+const router = require("./routes/index")
 const { errors } = require("celebrate");
+const NotFound = require("./errors/NotFound");
+const helmet = require("helmet")
+const limiter  = require('./middlewares/ratelimiter')
+
+app.use(CORS);
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
-
-const auth = require("./middlewares/auth");
 app.use(requestLogger);
-const router = require("./routes/index")
-
+app.use(helmet())
+app.use(limiter)
 mongoose.connect("mongodb://localhost:27017/yafilmsdb", {});
 
 app.use("/", router);
-
 app.use((req, res, next) => {
-  next(new NotFoundError("Страница не найдена"));
+  next(new NotFound("Страница не найдена"));
 });
-
 app.use(errorLogger);
 app.use(errors());
-
 app.use((err, req, res, next) => {
   const { statusCode = 500, message } = err;
   res.status(statusCode).send({
@@ -31,7 +31,6 @@ app.use((err, req, res, next) => {
   });
   next();
 });
-
 app.listen(3000, () => {
   console.log('test')
 });

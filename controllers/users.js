@@ -6,6 +6,7 @@ const BadRequest = require("../errors/BadRequest"); // 400
 const ConflictError = require("../errors/ConflictError"); // 409
 const AuthError = require("../errors/AuthError"); // 401
 const { NODE_ENV, JWT_SECRET } = process.env;
+const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_CREATED } = require("http2").constants;
 
 module.exports.getUserInfo = (req, res, next) => {
   User.findById(req.user._id)
@@ -13,7 +14,7 @@ module.exports.getUserInfo = (req, res, next) => {
       if (!user) {
         throw new NotFound('Юзер не найден')
       }
-      res.send(user);
+      res.send({ "email": user.email, "name": user.name});
     })
     .catch((err) => {
       if (err.name === "CastError") {
@@ -26,13 +27,13 @@ module.exports.getUserInfo = (req, res, next) => {
 };
 
 module.exports.updateUserInfo = (req, res, next) => {
-  const { name } = req.body;
+  const { email, name } = req.body;
   User.findByIdAndUpdate(
-    req._id,
-    { name },
+    req.user._id,
+    { email, name },
     { new: true, runValidators: true }
   )
-    .then((user) => res.send(user))
+    .then((user) => res.send({ "email": user.email, "name": user.name}))
     .catch((err) => {
       if (err.name === "ValidationError") {
         return next(new BadRequest("Переданы некорректные данные"));
@@ -74,7 +75,7 @@ module.exports.createUser = (req, res, next) => {
         password: hash
       })
     )
-    .then(() => res.send({ name, email }))
+    .then(() => res.status(HTTP_STATUS_CREATED).send({ name, email }))
     .catch((err) => {
       if (err.name === "MongoServerError" || err.code === 11000) {
         return next(
