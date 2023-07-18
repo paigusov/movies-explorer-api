@@ -1,25 +1,26 @@
-const User = require("../models/users")
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const NotFound = require("../errors/NotFound"); // 404
-const BadRequest = require("../errors/BadRequest"); // 400
-const ConflictError = require("../errors/ConflictError"); // 409
-const AuthError = require("../errors/AuthError"); // 401
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_CREATED } = require('http2').constants;
+const User = require('../models/users');
+const NotFound = require('../errors/NotFound'); // 404
+const BadRequest = require('../errors/BadRequest'); // 400
+const ConflictError = require('../errors/ConflictError'); // 409
+const AuthError = require('../errors/AuthError'); // 401
+
 const { NODE_ENV, JWT_SECRET } = process.env;
-const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_CREATED } = require("http2").constants;
 
 module.exports.getUserInfo = (req, res, next) => {
   User.findById(req.user._id)
     .then((user) => {
       if (!user) {
-        throw new NotFound('Юзер не найден')
+        throw new NotFound('Юзер не найден');
       }
-      res.send({ "email": user.email, "name": user.name});
+      res.send({ email: user.email, name: user.name });
     })
     .catch((err) => {
-      if (err.name === "CastError") {
+      if (err.name === 'CastError') {
         return res.status(HTTP_STATUS_BAD_REQUEST).send({
-          message: `Некорректный id`,
+          message: 'Некорректный id',
         });
       }
       return next(err);
@@ -31,12 +32,17 @@ module.exports.updateUserInfo = (req, res, next) => {
   User.findByIdAndUpdate(
     req.user._id,
     { email, name },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   )
-    .then((user) => res.send({ "email": user.email, "name": user.name}))
+    .then((user) => res.send({ email: user.email, name: user.name }))
     .catch((err) => {
-      if (err.name === "ValidationError") {
-        return next(new BadRequest("Переданы некорректные данные"));
+      if (err.name === 'MongoServerError' && err.code === 11000) {
+        return next(
+          new ConflictError('Пользователь с таким email уже существует'),
+        );
+      }
+      if (err.name === 'ValidationError') {
+        return next(new BadRequest('Переданы некорректные данные'));
       }
       return next(err);
     });
@@ -46,19 +52,20 @@ module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
 
   User.findOne({ email })
-    .select("+password")
+    .select('+password')
     .then((user) => {
       if (!user) {
-        throw new AuthError("Неверный логин или пароль");
+        throw new AuthError('Неверный логин или пароль');
       }
       return bcrypt.compare(password, user.password).then((matched) => {
         if (!matched) {
-          throw new AuthError("Неверный логин или пароль");
+          throw new AuthError('Неверный логин или пароль');
         }
-        return res.send(jwt.sign({ _id: user._id },
-        NODE_ENV === "production" ? JWT_SECRET : "dev-secret",
-        { expiresIn: "7d" })
-        )
+        return res.send(jwt.sign(
+          { _id: user._id },
+          NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
+          { expiresIn: '7d' },
+        ));
       });
     })
     .catch(next);
@@ -68,22 +75,20 @@ module.exports.createUser = (req, res, next) => {
   const { name, email, password } = req.body;
   bcrypt
     .hash(password, 10)
-    .then((hash) =>
-      User.create({
-        name,
-        email,
-        password: hash
-      })
-    )
+    .then((hash) => User.create({
+      name,
+      email,
+      password: hash,
+    }))
     .then(() => res.status(HTTP_STATUS_CREATED).send({ name, email }))
     .catch((err) => {
-      if (err.name === "MongoServerError" || err.code === 11000) {
+      if (err.name === 'MongoServerError' && err.code === 11000) {
         return next(
-          new ConflictError("Пользователь с таким email уже существует")
+          new ConflictError('Пользователь с таким email уже существует'),
         );
       }
-      if (err.name === "ValidationError") {
-        return next(new BadRequest("Некорректные данные"));
+      if (err.name === 'ValidationError') {
+        return next(new BadRequest('Некорректные данные'));
       }
       return next(err);
     });

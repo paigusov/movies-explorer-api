@@ -3,11 +3,13 @@ module.exports = {
     es2021: true,
     node: true,
   },
-  extends: ["eslint:recommended"],
+  extends: 'airbnb-base',
   overrides: [],
   parserOptions: {
-    ecmaVersion: "latest",
-    sourceType: "module",
+    ecmaVersion: 'latest',
+    sourceType: 'module',
   },
-  rules: { "no-underscore-dangle": ["error", { allow: ["_id"] }] },
+  rules: {
+    'no-underscore-dangle': ['error', { allow: ['_id'] }],
+  },
 };

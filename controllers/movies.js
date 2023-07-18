@@ -1,14 +1,14 @@
-const Movie = require("../models/movies")
-const { HTTP_STATUS_CREATED } = require("http2").constants;
-const NotFound = require("../errors/NotFound"); // 404
-const CurrentError = require("../errors/CurrentError"); // 403
-const BadRequest = require("../errors/BadRequest"); // 400
+const { HTTP_STATUS_CREATED } = require('http2').constants;
+const Movie = require('../models/movies');
+const NotFound = require('../errors/NotFound'); // 404
+const CurrentError = require('../errors/CurrentError'); // 403
+const BadRequest = require('../errors/BadRequest'); // 400
 
 module.exports.getAllMovies = (req, res, next) => {
-  Movie.find({})
+  Movie.find({ owner: req.user._id })
     .then((movies) => res.send(movies))
-    .catch(next)
-}
+    .catch(next);
+};
 
 module.exports.createMovie = (req, res, next) => {
   const {
@@ -36,14 +36,14 @@ module.exports.createMovie = (req, res, next) => {
     movieid,
     nameRU,
     nameEN,
-    owner: req.user._id
+    owner: req.user._id,
   })
     .then((movie) => res.status(HTTP_STATUS_CREATED).send(movie))
     .catch((err) => {
-      if (err.name === "ValidationError") {
-        next( new BadRequest("Переданы некорректные данные при создании карточки"));
+      if (err.name === 'ValidationError') {
+        next(new BadRequest('Переданы некорректные данные при создании карточки'));
       } else {
-        return next(err);
+        next(err);
       }
     });
 };
@@ -59,13 +59,13 @@ module.exports.deleteMovie = (req, res, next) => {
       } else {
         return Movie.findByIdAndRemove(movie)
           .then(() => {
-            res.send({ message: `Фильм удалён` });
+            res.send({ message: 'Фильм удалён' });
           });
       }
     })
     .catch((err) => {
-      if (err.name === "CastError") {
-        next(new BadRequest("Переданы некорректные данные удаления"));
+      if (err.name === 'CastError') {
+        next(new BadRequest('Переданы некорректные данные удаления'));
       }
       return next(err);
     });
