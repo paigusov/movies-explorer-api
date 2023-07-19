@@ -30,3 +30,18 @@ module.exports.validateDeleteMovie = celebrate({
     movieId: Joi.string().hex().length(24).required(),
   }),
 });
+
+module.exports.validateLogin = celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().required().email({ tlds: { allow: false } }),
+    password: Joi.string().required(),
+  }),
+});
+
+module.exports.validateCreateUser = celebrate({
+  body: Joi.object().keys({
+    name: Joi.string().required().min(2).max(30),
+    email: Joi.string().required().email({ tlds: { allow: false } }),
+    password: Joi.string().required(),
+  }),
+});

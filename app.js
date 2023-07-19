@@ -8,7 +8,6 @@ const helmet = require('helmet');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
 const { CORS } = require('./middlewares/corserr');
 const router = require('./routes/index');
-const NotFound = require('./errors/NotFound');
 const limiter = require('./middlewares/ratelimiter');
 const errorHandler = require('./middlewares/errorHandler');
 const { MONGO_URL_DEV } = require('./utils/constants');
@@ -24,9 +23,6 @@ app.use(limiter);
 mongoose.connect(NODE_ENV === 'production' ? MONGO_URL : MONGO_URL_DEV);
 
 app.use('/', router);
-app.use((req, res, next) => {
-  next(new NotFound('Страница не найдена'));
-});
 app.use(errorLogger);
 app.use(errors());
 app.use(errorHandler);
